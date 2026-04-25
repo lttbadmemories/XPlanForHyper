@@ -9,29 +9,25 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: set up JDK 8
+      - name: set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Build APK (Auto Find Path)
         run: |
-          # Tìm file gradlew ở bất cứ đâu trong repo
           GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
           if [ -z "$GRADLEW_PATH" ]; then
-            echo "Không tìm thấy file gradlew nào trong toàn bộ dự án!"
+            echo "Không tìm thấy file gradlew nào!"
             exit 1
           fi
           
-          # Lấy thư mục chứa file đó
           BUILD_DIR=$(dirname "$GRADLEW_PATH")
-          echo "Đã tìm thấy dự án tại: $BUILD_DIR"
-          
-          # Cấp quyền và chạy build
           chmod +x "$GRADLEW_PATH"
           cd "$BUILD_DIR"
-          ./gradlew assembleDebug
+          # Thêm lệnh này để bỏ qua các cảnh báo không cần thiết
+          ./gradlew assembleDebug --warning-mode all
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
