@@ -17,24 +17,16 @@ jobs:
 
       - name: Grant execute permission for gradlew
         run: |
-          if [ -f "proj.android-studio/gradlew" ]; then chmod +x proj.android-studio/gradlew; fi
-          if [ -f "proj.android/gradlew" ]; then chmod +x proj.android/gradlew; fi
+          # Đường dẫn chính xác của dự án này
+          chmod +x frameworks/runtime-src/proj.android/gradlew || echo "Không tìm thấy gradlew"
 
       - name: Build with Gradle
         run: |
-          if [ -d "proj.android-studio" ]; then
-            cd proj.android-studio
-            ./gradlew assembleDebug
-          elif [ -d "proj.android" ]; then
-            cd proj.android
-            ./gradlew assembleDebug
-          else
-            echo "Không tìm thấy thư mục Android project!"
-            exit 1
-          fi
+          cd frameworks/runtime-src/proj.android
+          ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: XPlan-APK
-          path: "**/*.apk"
+          path: "frameworks/runtime-src/proj.android/app/build/outputs/apk/debug/*.apk"
