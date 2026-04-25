@@ -15,18 +15,26 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
+      - name: Build APK (Auto Find Path)
         run: |
-          # Đường dẫn chính xác của dự án này
-          chmod +x frameworks/runtime-src/proj.android/gradlew || echo "Không tìm thấy gradlew"
-
-      - name: Build with Gradle
-        run: |
-          cd frameworks/runtime-src/proj.android
+          # Tìm file gradlew ở bất cứ đâu trong repo
+          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Không tìm thấy file gradlew nào trong toàn bộ dự án!"
+            exit 1
+          fi
+          
+          # Lấy thư mục chứa file đó
+          BUILD_DIR=$(dirname "$GRADLEW_PATH")
+          echo "Đã tìm thấy dự án tại: $BUILD_DIR"
+          
+          # Cấp quyền và chạy build
+          chmod +x "$GRADLEW_PATH"
+          cd "$BUILD_DIR"
           ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: XPlan-APK
-          path: "frameworks/runtime-src/proj.android/app/build/outputs/apk/debug/*.apk"
+          path: "**/*.apk"
