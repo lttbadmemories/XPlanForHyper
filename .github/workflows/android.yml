@@ -9,21 +9,30 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: set up JDK 17
+      - name: set up JDK 8
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: '8'
           distribution: 'temurin'
 
-      - name: Build APK
+      - name: Grant execute permission for gradlew
+        run: chmod +x proj.android-studio/gradlew || chmod +x proj.android/gradlew
+
+      - name: Build with Gradle
         run: |
-          # Lưu ý: Các lệnh này phụ thuộc vào cấu trúc của Cocos2d-x
-          # Thông thường sẽ chạy script build của dự án
-          cd proj.android
-          ./gradlew assembleDebug
+          if [ -d "proj.android-studio" ]; then
+            cd proj.android-studio
+            ./gradlew assembleDebug
+          elif [ -d "proj.android" ]; then
+            cd proj.android
+            ./gradlew assembleDebug
+          else
+            echo "Không tìm thấy thư mục android!"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: my-game-apk
-          path: proj.android/app/build/outputs/apk/debug/*.apk
+          name: XPlan-APK
+          path: "**/*.apk"
