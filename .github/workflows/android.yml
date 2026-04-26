@@ -11,8 +11,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: 'recursive'
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -20,33 +18,10 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Fix Gradle & Build
+      - name: Build APK
         run: |
-          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-          BUILD_DIR=$(dirname "$GRADLEW_PATH")
-          cd "$BUILD_DIR"
-
           chmod +x ./gradlew
-
-          # Xóa repo Aliyun
-          find . -name "*.gradle" -exec sed -i '/aliyun/d' {} +
-
-          # Thêm google + mavenCentral
-          for file in $(find . -name "*.gradle"); do
-            sed -i '/repositories {/a\    google()\n    mavenCentral()' "$file"
-          done
-
-          # Fix MaxPermSize
-          grep -rl "MaxPermSize" . | xargs sed -i 's/-XX:MaxPermSize=[^ "]*//g' || true
-
-          # Build (retry 3 lần)
-          for i in 1 2 3; do
-            ./gradlew assembleDebug --no-daemon \
-              --refresh-dependencies \
-              -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
-              -Pandroid.useAndroidX=true \
-              -Pandroid.enableJetifier=true && break
-          done
+          ./gradlew assembleDebug --no-daemon --refresh-dependencies
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
