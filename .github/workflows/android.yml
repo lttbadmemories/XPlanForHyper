@@ -15,17 +15,20 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Fix Repositories & Build
+      - name: Fix Config & Build
         run: |
-          # Tìm file build.gradle hoặc settings.gradle
           GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
           BUILD_DIR=$(dirname "$GRADLEW_PATH")
           cd "$BUILD_DIR"
 
-          # Lệnh này sẽ thay thế các kho lưu trữ lỗi bằng kho chuẩn
-          find . -name "*.gradle" -exec sed -i 's/maven.aliyun.com/repo1.maven.org/g' {} +
+          # 1. Xóa bỏ MaxPermSize gây lỗi trong toàn bộ project
+          find . -name "*.gradle" -exec sed -i 's/-XX:MaxPermSize=[^ ]*//g' {} +
+          find . -name "gradle.properties" -exec sed -i 's/-XX:MaxPermSize=[^ ]*//g' {} +
           
-          # Cấp quyền và build lại
+          # 2. Thay thế máy chủ Trung Quốc bằng kho chuẩn (như bước trước)
+          find . -name "*.gradle" -exec sed -i 's/maven.aliyun.com/repo1.maven.org/g' {} +
+
+          # 3. Cấp quyền và chạy build
           chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
           
