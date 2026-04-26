@@ -17,22 +17,29 @@ jobs:
           distribution: 'temurin'
 
       - name: Fix Gradle & Build
-        run: |
-          GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-          BUILD_DIR=$(dirname "$GRADLEW_PATH")
-          cd "$BUILD_DIR"
+        run:
+        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+BUILD_DIR=$(dirname "$GRADLEW_PATH")
+cd "$BUILD_DIR"
 
-          chmod +x ./gradlew
+chmod +x ./gradlew
 
-          # 1. XÓA repo Aliyun (rất quan trọng)
-          find . -name "*.gradle" -exec sed -i '/aliyun/d' {} +
+# Xóa repo Aliyun
+find . -name "*.gradle" -exec sed -i '/aliyun/d' {} +
 
-          # 2. ĐẢM BẢO có google + mavenCentral
-          find . -name "*.gradle" -exec sed -i 's/repositories {/repositories {\n    google()\n    mavenCentral()/g' {} +
+# Thêm google + mavenCentral (an toàn)
+for file in $(find . -name "*.gradle"); do
+  sed -i '/repositories {/a\    google()\n    mavenCentral()' "$file"
+done
 
-          # 3. Fix MaxPermSize
-          grep -rl "MaxPermSize" . | xargs sed -i 's/-XX:MaxPermSize=[^ "]*//g' || true
+# Fix MaxPermSize
+grep -rl "MaxPermSize" . | xargs sed -i 's/-XX:MaxPermSize=[^ "]*//g' || true
 
-          # 4. Build + refresh dependencies + retry
-          for i in 1 2 3; do
-            ./
+# Build (retry 3 lần)
+for i in 1 2 3; do
+  ./gradlew assembleDebug --no-daemon \
+    --refresh-dependencies \
+    -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
+    -Pandroid.useAndroidX=true \
+    -Pandroid.enableJetifier=true && break
+done
