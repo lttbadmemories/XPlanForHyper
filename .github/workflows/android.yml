@@ -15,26 +15,18 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build APK (Clean Config)
+      - name: Fix Repositories & Build
         run: |
+          # Tìm file build.gradle hoặc settings.gradle
           GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
-          if [ -z "$GRADLEW_PATH" ]; then
-            echo "Không tìm thấy file gradlew nào!"
-            exit 1
-          fi
-          
           BUILD_DIR=$(dirname "$GRADLEW_PATH")
-          chmod +x "$GRADLEW_PATH"
           cd "$BUILD_DIR"
 
-          # Xóa bỏ các thông số Java cũ (như MaxPermSize) trong file gradle.properties nếu có
-          if [ -f "gradle.properties" ]; then
-            sed -i 's/-XX:MaxPermSize=[^ ]*//g' gradle.properties
-            sed -i 's/-XX:+MaxPermSize=[^ ]*//g' gradle.properties
-          fi
-
-          # Chạy build và bỏ qua các tùy chọn Java lỗi thời từ môi trường
-          export GRADLE_OPTS="-Xmx2048m -Dorg.gradle.jvmargs='-Xmx2048m'"
+          # Lệnh này sẽ thay thế các kho lưu trữ lỗi bằng kho chuẩn
+          find . -name "*.gradle" -exec sed -i 's/maven.aliyun.com/repo1.maven.org/g' {} +
+          
+          # Cấp quyền và build lại
+          chmod +x ./gradlew
           ./gradlew assembleDebug --no-daemon
           
       - name: Upload APK
