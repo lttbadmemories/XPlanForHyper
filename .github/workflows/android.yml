@@ -15,22 +15,24 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Fix Config & Build
+      - name: Hard Fix & Build
         run: |
           GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
           BUILD_DIR=$(dirname "$GRADLEW_PATH")
           cd "$BUILD_DIR"
 
-          # 1. Xóa bỏ MaxPermSize gây lỗi trong toàn bộ project
-          find . -name "*.gradle" -exec sed -i 's/-XX:MaxPermSize=[^ ]*//g' {} +
-          find . -name "gradle.properties" -exec sed -i 's/-XX:MaxPermSize=[^ ]*//g' {} +
-          
-          # 2. Thay thế máy chủ Trung Quốc bằng kho chuẩn (như bước trước)
+          # 1. Sửa lỗi máy chủ Maven Trung Quốc
           find . -name "*.gradle" -exec sed -i 's/maven.aliyun.com/repo1.maven.org/g' {} +
 
-          # 3. Cấp quyền và chạy build
+          # 2. Xóa triệt để cấu hình MaxPermSize trong mọi file
+          grep -rl "MaxPermSize" . | xargs sed -i 's/-XX:MaxPermSize=[^ "]*//g' || true
+
+          # 3. Chạy build và ÉP hệ thống dùng cấu hình bộ nhớ mới của Java 17
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug --no-daemon \
+            -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m" \
+            -Pandroid.useAndroidX=true \
+            -Pandroid.enableJetifier=true
           
       - name: Upload APK
         uses: actions/upload-artifact@v4
