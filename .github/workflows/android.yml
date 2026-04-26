@@ -15,7 +15,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Build APK (Auto Find Path)
+      - name: Build APK (Clean Config)
         run: |
           GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
           if [ -z "$GRADLEW_PATH" ]; then
@@ -26,9 +26,17 @@ jobs:
           BUILD_DIR=$(dirname "$GRADLEW_PATH")
           chmod +x "$GRADLEW_PATH"
           cd "$BUILD_DIR"
-          # Thêm lệnh này để bỏ qua các cảnh báo không cần thiết
-          ./gradlew assembleDebug --warning-mode all
 
+          # Xóa bỏ các thông số Java cũ (như MaxPermSize) trong file gradle.properties nếu có
+          if [ -f "gradle.properties" ]; then
+            sed -i 's/-XX:MaxPermSize=[^ ]*//g' gradle.properties
+            sed -i 's/-XX:+MaxPermSize=[^ ]*//g' gradle.properties
+          fi
+
+          # Chạy build và bỏ qua các tùy chọn Java lỗi thời từ môi trường
+          export GRADLE_OPTS="-Xmx2048m -Dorg.gradle.jvmargs='-Xmx2048m'"
+          ./gradlew assembleDebug --no-daemon
+          
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
